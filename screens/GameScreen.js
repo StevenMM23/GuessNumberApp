@@ -1,8 +1,19 @@
-import { Text, View, StyleSheet, SafeAreaView, Alert } from "react-native";
-import { useState, useEffect} from "react";
+import {
+  Text,
+  View,
+  StyleSheet,
+  SafeAreaView,
+  Alert,
+  FlatList,
+} from "react-native";
+import { useState, useEffect } from "react";
+import { Ionicons } from "@expo/vector-icons";
 import Title from "../components/Title";
 import NumberContainer from "../components/NumberContainer";
 import PrimaryButton from "../components/PrimaryButton";
+import InstructionText from "../components/InstructionText";
+import Card from "../components/Card";
+import GuessLogItem from "../components/GuessLogItem";
 function generateRandomBetween(min, max, exclude) {
   const rndNum = Math.floor(Math.random() * (max - min)) + min;
 
@@ -18,19 +29,26 @@ let maxBoundary = 100;
 function GameScreen({ userNumber, onGameOver }) {
   const initialGuess = generateRandomBetween(1, 100, userNumber);
   const [currentGuess, setCurrentGuess] = useState(initialGuess);
-    useEffect(() => { 
-        if(currentGuess == userNumber) { 
-            onGameOver();
-        }
-    }, [currentGuess, userNumber, onGameOver])
-  function nextGuessHandler(direction) {
+  const [guessRounds, setGuessRounds] = useState([initialGuess]);
+  useEffect(() => {
+    if (currentGuess == userNumber) {
+      onGameOver(guessRounds.length);
+    }
+  }, [currentGuess, userNumber, onGameOver]);
 
+  useEffect(() => {
+    minBoundary = 1;
+    maxBoundary = 100;
+  }, []);
+  function nextGuessHandler(direction) {
     if (
-        (direction === "lower" && currentGuess < userNumber) || 
-        (direction === "higher" && currentGuess > userNumber)
-    ) { 
-        Alert.alert("Don't lie!", "You know that this is wrong...", [{text: "Sorry!", style: 'cancel'}])
-        return;
+      (direction === "lower" && currentGuess < userNumber) ||
+      (direction === "higher" && currentGuess > userNumber)
+    ) {
+      Alert.alert("Don't lie!", "You know that this is wrong...", [
+        { text: "Sorry!", style: "cancel" },
+      ]);
+      return;
     }
     if (direction === "lower") {
       maxBoundary = currentGuess;
@@ -38,28 +56,51 @@ function GameScreen({ userNumber, onGameOver }) {
       minBoundary = currentGuess + 1;
     }
     const newRndNumber = generateRandomBetween(
-      1,
-      100,
+      minBoundary,
+      maxBoundary,
       currentGuess
     );
     setCurrentGuess(newRndNumber);
+    setGuessRounds((prevGuessRounds) => [...prevGuessRounds, newRndNumber]);
   }
+
+  const guessRoundsListLength = guessRounds.length;
   return (
     <View style={styles.screen}>
       <Title>Opponent's Guess</Title>
       <NumberContainer>{currentGuess}</NumberContainer>
-      <View>
-        <Text>Higher or Lower?</Text>
+      <Card>
         <View>
-          <View>
-            <PrimaryButton onPress={nextGuessHandler.bind(this, 'lower')}>-</PrimaryButton>
-          </View>
-          <View>
-            <PrimaryButton onPress={nextGuessHandler.bind(this,'higher')}>+</PrimaryButton>
+          <InstructionText style={styles.instructionText}>
+            Higher or Lower?
+          </InstructionText>
+          <View style={styles.buttonSelect}>
+            <View style={{ flex: 1 }}>
+              <PrimaryButton onPress={nextGuessHandler.bind(this, "lower")}>
+                <Ionicons name="md-remove" size={24} color="white" />
+              </PrimaryButton>
+            </View>
+            <View style={{ flex: 1 }}>
+              <PrimaryButton onPress={nextGuessHandler.bind(this, "higher")}>
+                <Ionicons name="md-add" size={24} color="white" />
+              </PrimaryButton>
+            </View>
           </View>
         </View>
+      </Card>
+      <View>
+        {/* <FlatList
+          data={guessRounds}
+          renderItem={(itemData) => (
+            <GuessLogItem
+              roundNumber={guessRoundsListLength - itemData.index}
+              guess={itemData.item}
+            />
+          )}
+          keyExtractor={(item) => item}
+        />
+        {guessRounds.map(guessRounds => <Text key={guessRounds}>{guessRounds}</Text>)} */}
       </View>
-      <View></View>
     </View>
   );
 }
@@ -70,5 +111,11 @@ const styles = StyleSheet.create({
   screen: {
     flex: 1,
     padding: 12,
+  },
+  instructionText: {
+    marginBottom: 12,
+  },
+  buttonSelect: {
+    flexDirection: "row",
   },
 });
